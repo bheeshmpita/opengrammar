@@ -21,10 +21,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Detect Backend Path
+        id: detect
+        run: |
+          if [ -d "./opengrammar/backend" ]; then
+            echo "dir=./opengrammar/backend" >> $GITHUB_OUTPUT
+          elif [ -d "./backend" ]; then
+            echo "dir=./backend" >> $GITHUB_OUTPUT
+          else
+            echo "dir=." >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and Push Backend Container
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: ${{ steps.detect.outputs.dir }}
+          file: ${{ steps.detect.outputs.dir }}/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}/backend:latest
