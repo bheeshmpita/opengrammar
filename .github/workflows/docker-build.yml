@@ -1,13 +1,33 @@
-FROM node:20-alpine
+name: Build and Push OpenGrammar Backend
 
-WORKDIR /app
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'backend/Dockerfile'
 
-# Install the official compiled server package
-RUN npm install -g opengrammar-server
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
-EXPOSE 8787
-ENV PORT=8787
-ENV NODE_ENV=production
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-# Run the standalone service
-CMD ["opengrammar-server", "--port", "8787"]
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Backend Container
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}/backend:latest
